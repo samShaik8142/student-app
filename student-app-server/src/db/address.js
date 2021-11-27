@@ -53,7 +53,7 @@ export function deleteAddress(id, callbackFn) {
 export function updateAddress(address, callbackFn) {
     const connection = getConnection()
     connection.connect()
-    connection.query(`update address set houseno="${address.houseno}",street='${address.street}',town='${address.town}',district='${address.district}',state='${address.state}',country='${address.country}' where addressid=${address.addressid}`, (error, result) => {
+    connection.query(`update address set houseno="${address.houseNo}",street='${address.street}',town='${address.town}',district='${address.district}',state='${address.state}',country='${address.country}' where addressid=${address.addressid}`, (error, result) => {
         if (error) throw error;
         connection.end();
         callbackFn(result.affectedRows  > 0 ? true : false)

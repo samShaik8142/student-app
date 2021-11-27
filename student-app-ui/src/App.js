@@ -1,24 +1,16 @@
-import logo from './logo.svg';
 import './App.css';
 import React from "react"
-import CreateSchool from './CreateSchool';
 import DisplaySchools from './components/DisplaySchools';
+import CreateSchool from './components/CreateSchool';
+import CreateStudent from './components/CreateStudent';
 
 function App() {
 
-
-  React.useEffect(() => {
-    // fetch("http://localhost:5000/school/get/2").then(data => {
-    //   data.json().then(jsonData =>{
-    //     console.log(jsonData)
-    //   });
-    // })
-  }, []);
-
   return (
-    <div>    
+    <div>
       <CreateSchool />
       <DisplaySchools />
+      <CreateStudent />
     </div>
   );
 }

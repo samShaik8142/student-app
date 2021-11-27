@@ -17,26 +17,23 @@ export default function registerAPI() {
 
   // delete school details by id  
   app.delete("/school/delete/:id", (req, res) => {
-    const id = req.params.id;
-    // Get School Details (Callback function delete school)
-    // Delete address in delete school's callback function
-    // Return response(res.send) in delete address's callback function
+    const id = req.params.id;    
 
-    getSchool(id, (school)=> {
-      if(!school){
+    getSchool(id, (school) => {
+      if (!school) {
         res.send({ message: "Failed to delete School" });
       } else {
-        deleteSchool(id, (result)=> {
-          if(result){
-            deleteAddress(school.ADDRESSID, (addrResult)=> {
+        deleteSchool(id, (result) => {
+          if (result) {
+            deleteAddress(school.ADDRESSID, (addrResult) => {
               res.send(addrResult ? { message: "School deleted successfully" } : { message: "Failed to delete School" });
             })
           } else {
             res.send({ message: "Failed to delete School" });
           }
-        })      
+        })
       }
-    });          
+    });
   });
 
   // create school details
@@ -83,10 +80,92 @@ export default function registerAPI() {
   app.get("/school/get-all", (req, res) => {
     getSchools((schools) => {
       const resutls = schools.map(name => {
-        return { id: name.ID, name: name.NAME, address: { addressId: name.ADDRESSID, houseNo: name.HOUSENO, street: name.STREET, town: name.TOWN, district: name.TOWN, state: name.STATE, country: name.COUNTRY, is_address: name.IS_SCHOOL_ADDR } }
+        return { id: name.ID, name: name.NAME, address: 
+          { addressId: name.ADDRESSID, houseNo: name.HOUSENO, 
+            street: name.STREET, town: name.TOWN, district: name.DISTRICT,
+            state: name.STATE, country: name.COUNTRY, is_address: name.IS_SCHOOL_ADDR } 
+          }
       })
       res.send(resutls)
     });
   });
+
+  app.get("/student/:id", (req, res) => {
+    const id = req.params.id;
+    getStudent(id, (student) => {
+      res.send(student);
+    })
+  })
+
+  app.get('/students/get-all', (req, res) => {
+    getStudents((students) => {
+      const results = students.map(name => {
+        return { id: name.ID, firstName: name.FIRSTNAME, lastName: name.LASTNAME, contactNumber: name.CONTACTNUMBER, isAdmin: name.ISADMIN, school: { id: name.ID, name: name.NAME, address: { houseNo: name.HOUSENO, street: name.STREET, town: name.TOWN, district: name.DISTRICT, country: name.COUNTRY, is_school_address: name.IS_SCHOOL_ADDRESS } } }
+
+      })
+      res.send(results);
+    })
+  })
+
+
+
+  app.delete("/delete/student/:id", (req, res) => {
+    const id = req.params.id;
+    console.log(id);
+    getStudent(id, (school) => {
+      console.log(school);
+      if (school) {
+        deleteStudent(id, (delSchool) => {
+          console.log(delSchool);
+          if (delSchool) {
+            deleteAddr(id, (delStudent) => {
+              res.send(delStudent ? { message: "deleted" } : { message: "unsuccessfull" })
+            })
+          }
+          else {
+            res.send({ message: "unsuccessfull" });
+          }
+        })
+      }
+      else {
+        res.send({ message: "unsuccessfull" });
+      }
+    })
+
+  });
+
+  app.post("/create/student", (req, res) => {
+    const body = req.body;
+    getStudentUpdate(body, (student) => {
+      console.log(student);
+      if (!student) {
+        createAddress(body, (address) => {
+          console.log(address);
+          createStudent(body, (student) => {
+            res.send(student ? { message: "s" } : { message: "n" });
+          })
+        })
+      }
+      else {
+        res.send("nnn")
+      }
+    })
+  })
+
+  app.put("/update/student", (req, res) => {
+    const body = req.body;
+    console.log(body);
+    updateStudent(body, (student) => {
+      console.log(student);
+      if (body.address) {
+        updateAddress(body, (address) => {
+          res.send(address ? { message: "updated successfully" } : { message: "updated unsuccessfull" });
+        })
+      }
+      else {
+        res.send({ message: " student updated successfully" })
+      }
+    })
+  })
 
 }
