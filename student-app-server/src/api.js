@@ -2,7 +2,7 @@ import { app } from "../index.js";
 import bodyParser from "body-parser";
 import getSchools, { createSchool, deleteSchool, getSchool, updateSchool } from "./db/school.js";
 import { createAddress, deleteAddress, getAddressByParams, updateAddress } from "./db/address.js";
-import { createStudent, getStudentByFrNameAndCnNumber, getStudentById, getStudents, updateStudent } from "./db/student.js";
+import { createStudent, deleteStudent, getStudentByFrNameAndCnNumber, getStudentById, getStudents, updateStudent } from "./db/student.js";
 
 export default function registerAPI() {
 
@@ -94,28 +94,33 @@ export default function registerAPI() {
     });
   });
 
-  app.get("/student/:id", (req, res) => {
-    const id = req.params.id;
-    getStudentById(id, (student) => {
-      res.send(student ? student : { 'message': "Student not found" });
-    })
-  })
-
   app.get('/student/get-all', (req, res) => {
+    console.log("reached")
     getStudents((students) => {
       const results = students.map(student => {
         return {
           id: student.ID, firstName: student.FIRSTNAME, lastName: student.LASTNAME, contactNumber: student.CONTACTNUMBER, isAdmin: student.ISADMIN,
           school: { id: student.ID, name: student.NAME },
-          address: { houseNo: student.HOUSENO, street: student.STREET, town: student.TOWN, district: student.DISTRICT, country: student.COUNTRY, is_school_address: student.IS_SCHOOL_ADDRESS }
+          address: { houseNo: student.HOUSENO, street: student.STREET, town: student.TOWN, district: student.DISTRICT, state: student.STATE, country: student.COUNTRY, is_school_address: student.IS_SCHOOL_ADDRESS }
         }
-
       })
       res.send(results);
     })
-  })
+  });
 
-  app.delete("/delete/student/:id", (req, res) => {
+  app.get("/student/:id", (req, res) => {
+    const id = req.params.id;
+    getStudentById(id, (student) => {
+      const result = student ? {
+        id: student.ID, firstName: student.FIRSTNAME, lastName: student.LASTNAME, contactNumber: student.CONTACTNUMBER, isAdmin: student.ISADMIN,
+        school: { id: student.ID, name: student.NAME },
+        address: { houseNo: student.HOUSENO, street: student.STREET, town: student.TOWN, district: student.DISTRICT, state: student.STATE, country: student.COUNTRY, is_school_address: student.IS_SCHOOL_ADDRESS }
+      } : {'message': "Student not found" };
+      res.send(result);
+    })
+  })  
+
+  app.delete("/student/delete/:id", (req, res) => {
     const id = req.params.id;
     console.log(id);
     getStudentById(id, (student) => {
@@ -124,7 +129,7 @@ export default function registerAPI() {
         deleteStudent(id, (result) => {
           console.log(result);
           if (result) {
-            deleteAddress(id, (addrResult) => {
+            deleteAddress(student.ADDRESSID, (addrResult) => {
               res.send(addrResult ? { message: "Student deleted successfully" } : { message: "unsuccessfull" })
             })
           }
@@ -161,16 +166,24 @@ export default function registerAPI() {
   app.put("/student/update", (req, res) => {
     const body = req.body;
     console.log(body);
-    updateStudent(body, (student) => {
-      console.log(student);
-      if (body.address) {
-        updateAddress(body, (address) => {
-          res.send(address ? { message: "Student updated successfully" } : { message: "unsuccessfull" });
+    getStudentByFrNameAndCnNumber(body, (student) => {
+      if(student){
+        updateStudent(body, (result) => {
+          console.log(result);
+          body.address.addressid = student.ADDRESSID;
+          if (body.address) {
+            updateAddress(body.address, (address) => {
+              res.send(address ? { message: "Student updated successfully" } : { message: "unsuccessfull" });
+            })
+          }
+          else {
+            res.send({ message: "Student updated successfully" })
+          }
         })
+      } else {
+        res.send({ message: "Student not found" })
       }
-      else {
-        res.send({ message: "Student updated successfully" })
-      }
+      
     })
   })
 
