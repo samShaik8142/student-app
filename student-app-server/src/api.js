@@ -2,6 +2,7 @@ import { app } from "../index.js";
 import bodyParser from "body-parser";
 import getSchools, { createSchool, deleteSchool, getSchool, updateSchool } from "./db/school.js";
 import { createAddress, deleteAddress, getAddressByParams, updateAddress } from "./db/address.js";
+import { createStudent, getStudentByFrNameAndCnNumber, getStudentById, getStudents, updateStudent } from "./db/student.js";
 
 export default function registerAPI() {
 
@@ -17,7 +18,7 @@ export default function registerAPI() {
 
   // delete school details by id  
   app.delete("/school/delete/:id", (req, res) => {
-    const id = req.params.id;    
+    const id = req.params.id;
 
     getSchool(id, (school) => {
       if (!school) {
@@ -79,12 +80,15 @@ export default function registerAPI() {
 
   app.get("/school/get-all", (req, res) => {
     getSchools((schools) => {
-      const resutls = schools.map(name => {
-        return { id: name.ID, name: name.NAME, address: 
-          { addressId: name.ADDRESSID, houseNo: name.HOUSENO, 
-            street: name.STREET, town: name.TOWN, district: name.DISTRICT,
-            state: name.STATE, country: name.COUNTRY, is_address: name.IS_SCHOOL_ADDR } 
+      const resutls = schools.map(school => {
+        return {
+          id: school.ID, name: school.NAME, address:
+          {
+            addressId: school.ADDRESSID, houseNo: school.HOUSENO,
+            street: school.STREET, town: school.TOWN, district: school.DISTRICT,
+            state: school.STATE, country: school.COUNTRY, is_address: school.IS_SCHOOL_ADDR
           }
+        }
       })
       res.send(resutls)
     });
@@ -92,34 +96,36 @@ export default function registerAPI() {
 
   app.get("/student/:id", (req, res) => {
     const id = req.params.id;
-    getStudent(id, (student) => {
-      res.send(student);
+    getStudentById(id, (student) => {
+      res.send(student ? student : { 'message': "Student not found" });
     })
   })
 
-  app.get('/students/get-all', (req, res) => {
+  app.get('/student/get-all', (req, res) => {
     getStudents((students) => {
-      const results = students.map(name => {
-        return { id: name.ID, firstName: name.FIRSTNAME, lastName: name.LASTNAME, contactNumber: name.CONTACTNUMBER, isAdmin: name.ISADMIN, school: { id: name.ID, name: name.NAME, address: { houseNo: name.HOUSENO, street: name.STREET, town: name.TOWN, district: name.DISTRICT, country: name.COUNTRY, is_school_address: name.IS_SCHOOL_ADDRESS } } }
+      const results = students.map(student => {
+        return {
+          id: student.ID, firstName: student.FIRSTNAME, lastName: student.LASTNAME, contactNumber: student.CONTACTNUMBER, isAdmin: student.ISADMIN,
+          school: { id: student.ID, name: student.NAME },
+          address: { houseNo: student.HOUSENO, street: student.STREET, town: student.TOWN, district: student.DISTRICT, country: student.COUNTRY, is_school_address: student.IS_SCHOOL_ADDRESS }
+        }
 
       })
       res.send(results);
     })
   })
 
-
-
   app.delete("/delete/student/:id", (req, res) => {
     const id = req.params.id;
     console.log(id);
-    getStudent(id, (school) => {
-      console.log(school);
-      if (school) {
-        deleteStudent(id, (delSchool) => {
-          console.log(delSchool);
-          if (delSchool) {
-            deleteAddr(id, (delStudent) => {
-              res.send(delStudent ? { message: "deleted" } : { message: "unsuccessfull" })
+    getStudentById(id, (student) => {
+      console.log(student);
+      if (student) {
+        deleteStudent(id, (result) => {
+          console.log(result);
+          if (result) {
+            deleteAddress(id, (addrResult) => {
+              res.send(addrResult ? { message: "Student deleted successfully" } : { message: "unsuccessfull" })
             })
           }
           else {
@@ -128,42 +134,42 @@ export default function registerAPI() {
         })
       }
       else {
-        res.send({ message: "unsuccessfull" });
+        res.send({ message: "Student not found" });
       }
     })
-
   });
 
-  app.post("/create/student", (req, res) => {
+  app.post("/student/create", (req, res) => {
     const body = req.body;
-    getStudentUpdate(body, (student) => {
+    getStudentByFrNameAndCnNumber(body, (student) => {
       console.log(student);
       if (!student) {
-        createAddress(body, (address) => {
+        createAddress(body.address, (address) => {
           console.log(address);
-          createStudent(body, (student) => {
-            res.send(student ? { message: "s" } : { message: "n" });
+          body.address.addressId = address.ADDRESSID;
+          createStudent(body, (result) => {
+            res.send(result ? { message: "Student created successfully" } : { message: "unsuccessfull" });
           })
         })
       }
       else {
-        res.send("nnn")
+        res.send({message: "Student already exists"})
       }
     })
   })
 
-  app.put("/update/student", (req, res) => {
+  app.put("/student/update", (req, res) => {
     const body = req.body;
     console.log(body);
     updateStudent(body, (student) => {
       console.log(student);
       if (body.address) {
         updateAddress(body, (address) => {
-          res.send(address ? { message: "updated successfully" } : { message: "updated unsuccessfull" });
+          res.send(address ? { message: "Student updated successfully" } : { message: "unsuccessfull" });
         })
       }
       else {
-        res.send({ message: " student updated successfully" })
+        res.send({ message: "Student updated successfully" })
       }
     })
   })
